@@ -1,0 +1,16 @@
+# Entorno virtual
+venv/
+ENV/
+env/
+
+# Archivos temporales de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Base de datos local (creada automáticamente por Django)
+db.sqlite3
+
+# Archivos de configuración de VS Code (opcional)
+.vscode/
