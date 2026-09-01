@@ -1,16 +1,24 @@
-# Entorno virtual
-venv/
-ENV/
-env/
-
-# Archivos temporales de Python
+# --- Backend (Python / Django) ---
+.venv/
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-
-# Base de datos local (creada automáticamente por Django)
+*.py[cod]
+*.sqlite3
 db.sqlite3
+staticfiles/
+media/
+*.egg-info/
 
-# Archivos de configuración de VS Code (opcional)
+# --- Frontend (Node / Vite) ---
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# --- Entorno / secretos ---
+.env
+.env.local
+
+# --- Editor / SO ---
 .vscode/
+.idea/
+.DS_Store
