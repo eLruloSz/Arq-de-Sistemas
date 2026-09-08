@@ -34,3 +34,19 @@ class InvalidSeatError(ReservationDomainError):
 
 class InvalidReservationError(ReservationDomainError):
     """La solicitud de reserva está incompleta o mal formada."""
+
+
+class BookingNotPayableError(ReservationDomainError):
+    """La reserva o su pago no permiten confirmar un pago simulado."""
+
+    def __init__(self, *, status):
+        self.status = status
+        super().__init__("The booking cannot be paid in its current state.")
+
+
+class BookingNotCancellableError(ReservationDomainError):
+    """La reserva o su pago no permiten una cancelación coherente."""
+
+    def __init__(self, *, status):
+        self.status = status
+        super().__init__("The booking cannot be cancelled in its current state.")

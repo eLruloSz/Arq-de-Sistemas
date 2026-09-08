@@ -2,12 +2,15 @@ from collections import Counter
 from collections.abc import Sequence
 
 from django.db import transaction
+from django.utils import timezone
 
 from flota.models import Asiento
 from rutas.models import RutaParada, Tarifa
 from viajes.models import Viaje
 
 from .exceptions import (
+    BookingNotCancellableError,
+    BookingNotPayableError,
     FareNotFoundError,
     InvalidReservationError,
     InvalidSeatError,
@@ -15,7 +18,7 @@ from .exceptions import (
     SeatUnavailableError,
     TripNotAvailableError,
 )
-from .models import DetalleReserva, Pasajero, Reserva
+from .models import DetalleReserva, Pago, Pasajero, Reserva
 
 
 BLOCKING_RESERVATION_STATES = (
@@ -261,4 +264,65 @@ def create_reservation(*, usuario, viaje, origen, destino, pasajeros):
             detail.full_clean()
             detail.save()
 
+    return reservation
+
+
+def pay_reservation(*, reservation_id):
+    """Confirma un pago simulado. La reserva es el primer bloqueo compartido.
+
+    Solo se reutiliza un pago PENDIENTE del monto correcto y sin paid_at.
+    Las inconsistencias se rechazan; no se reparan datos automáticamente.
+    """
+    with transaction.atomic():
+        reservation = Reserva.objects.select_for_update().get(pk=reservation_id)
+        if reservation.estado != Reserva.Estado.PENDIENTE_PAGO:
+            raise BookingNotPayableError(status=reservation.estado)
+        payment = Pago.objects.select_for_update().filter(reserva=reservation).first()
+        if payment is not None and (
+            payment.estado != Pago.Estado.PENDIENTE
+            or payment.monto != reservation.total
+            or payment.paid_at is not None
+        ):
+            raise BookingNotPayableError(status=reservation.estado)
+        if payment is None:
+            payment = Pago(reserva=reservation, monto=reservation.total)
+        payment.estado = Pago.Estado.APROBADO
+        payment.paid_at = timezone.now()
+        payment.full_clean()
+        payment.save()
+        reservation.estado = Reserva.Estado.CONFIRMADA
+        reservation.full_clean()
+        reservation.save(update_fields=("estado",))
+    return reservation
+
+
+def cancel_reservation(*, reservation_id):
+    """Cancela sin alterar asientos: su disponibilidad se deriva del estado.
+
+    Pendiente exige ausencia de pago; confirmada exige APROBADO, monto
+    coincidente y paid_at definido. No oculta combinaciones incoherentes.
+    """
+    with transaction.atomic():
+        reservation = Reserva.objects.select_for_update().get(pk=reservation_id)
+        if reservation.estado not in BLOCKING_RESERVATION_STATES:
+            raise BookingNotCancellableError(status=reservation.estado)
+        payment = Pago.objects.select_for_update().filter(reserva=reservation).first()
+        if reservation.estado == Reserva.Estado.PENDIENTE_PAGO:
+            if payment is not None:
+                raise BookingNotCancellableError(status=reservation.estado)
+        else:
+            if (
+                payment is None
+                or payment.estado != Pago.Estado.APROBADO
+                or payment.monto != reservation.total
+                or payment.paid_at is None
+            ):
+                raise BookingNotCancellableError(status=reservation.estado)
+            payment.estado = Pago.Estado.ANULADO
+            payment.full_clean()
+            payment.save(update_fields=("estado",))
+        reservation.estado = Reserva.Estado.CANCELADA
+        reservation.cancelled_at = timezone.now()
+        reservation.full_clean()
+        reservation.save(update_fields=("estado", "cancelled_at"))
     return reservation

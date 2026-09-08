@@ -22,7 +22,7 @@ class PublicUserSerializer(serializers.ModelSerializer):
         )
         read_only_fields = fields
 
-    def get_role(self, user):
+    def get_role(self, user) -> str:
         if user.is_staff:
             return "ADMINISTRADOR"
         return "PASAJERO"
