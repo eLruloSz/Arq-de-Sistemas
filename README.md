@@ -36,20 +36,7 @@ sistema-buses/
 └── docker-compose.yml   # levanta PostgreSQL para desarrollo local
 ```
 
-## Cómo levantar el proyecto
-
-### 1. Base de datos
-
-Con Docker instalado:
-
-```bash
-docker compose up -d
-```
-
-Esto levanta PostgreSQL en `localhost:5432` con la base `sistema_buses`
-(usuario `postgres`, password `postgres` — solo para desarrollo local).
-
-### 2. Backend
+## Backend local
 
 ```bash
 cd backend
@@ -58,14 +45,52 @@ source .venv/bin/activate      # en Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 cp .env.example .env
 python manage.py migrate
-python manage.py createsuperuser
 python manage.py runserver
 ```
 
-La API queda en `http://localhost:8000/` y el admin de Django en
-`http://localhost:8000/admin/`.
+Para esta modalidad, PostgreSQL debe estar disponible y `DB_HOST=localhost` en
+`backend/.env`. Los valores por defecto son exclusivamente de desarrollo; use
+una `SECRET_KEY` segura y `DEBUG=False` fuera de ese entorno.
 
-### 3. Frontend
+## Docker
+
+```bash
+docker compose up --build
+```
+
+Compose levanta PostgreSQL 16 y el backend con Gunicorn, aplica las migraciones
+y publica la documentación en `http://localhost:8000/api/docs/`. No es necesario
+crear un archivo `.env`: Compose incluye valores de desarrollo reemplazables
+mediante variables de entorno. Dentro de Docker, `DB_HOST` es `db`.
+
+## Tests
+
+Con PostgreSQL disponible y las variables de `backend/.env` configuradas:
+
+```bash
+cd backend
+pip install -r requirements-dev.txt
+python manage.py test --noinput
+```
+
+## Coverage
+
+```bash
+cd backend
+coverage erase
+coverage run manage.py test --noinput
+coverage report -m
+coverage report --fail-under=60
+```
+
+El umbral mínimo reproducible del proyecto es 60%.
+
+## CI
+
+GitHub Actions ejecuta la suite completa sobre PostgreSQL 16, valida una
+cobertura mínima de 60% y realiza un smoke test HTTP del stack Docker.
+
+## Frontend
 
 ```bash
 cd frontend
@@ -74,14 +99,5 @@ cp .env.example .env
 npm run dev
 ```
 
-La app queda en `http://localhost:5173/`, ya configurada con CORS para
-hablar con el backend.
-
-## Estado actual
-
-Estructura inicial del proyecto: apps de Django creadas y registradas,
-settings.py configurado para PostgreSQL vía variables de entorno, CORS
-habilitado, y el scaffold de React + TypeScript con la capa de cliente API
-lista. Aún no hay modelos de datos ni endpoints — ese es el siguiente paso
-(empezando por `rutas` y `viajes`, y la lógica de disponibilidad por tramo
-en `ventas`).
+La app queda en `http://localhost:5173/`, configurada con CORS para comunicarse
+con el backend.
