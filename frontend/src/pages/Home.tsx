@@ -1,30 +1,47 @@
-import { Link } from 'react-router-dom'
-import { useAuth } from '../context/useAuth'
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { getStops } from '../api/stops'
+import { SearchForm } from '../components/search/SearchForm'
+import type { Stop } from '../types/travel'
 
 export function Home() {
-  const { isAuthenticated, isAdmin } = useAuth()
+  const [searchParams] = useSearchParams()
+  const [stops, setStops] = useState<Stop[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    let active = true
+    getStops()
+      .then((data) => {
+        if (active) {
+          setStops(data)
+          if (data.length === 0) {
+            setError('No hay destinos activos disponibles en este momento.')
+          }
+        }
+      })
+      .catch(() => {
+        if (active) setError('No pudimos cargar los destinos. Intenta nuevamente más tarde.')
+      })
+      .finally(() => {
+        if (active) setIsLoading(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [])
 
   return (
     <div className="home-page">
-      <section className="hero-section">
+      <section className="hero-section hero-section--search">
         <div className="hero-copy">
           <span className="eyebrow">Viaja por Chile</span>
           <h1>Tu próximo destino comienza aquí</h1>
           <p>
-            Una plataforma sencilla para comprar y gestionar pasajes de buses
+            Busca rutas, compara horarios y reserva tus asientos de buses
             interurbanos de forma segura.
           </p>
-          {!isAuthenticated && (
-            <div className="hero-actions">
-              <Link className="button" to="/register">Crear una cuenta</Link>
-              <Link className="button button--secondary" to="/login">Iniciar sesión</Link>
-            </div>
-          )}
-          {isAuthenticated && (
-            <Link className="button" to={isAdmin ? '/admin' : '/bookings'}>
-              {isAdmin ? 'Ir a administración' : 'Ver mis reservas'}
-            </Link>
-          )}
         </div>
         <div className="route-illustration" aria-hidden="true">
           <span className="route-line" />
@@ -35,14 +52,14 @@ export function Home() {
         </div>
       </section>
 
-      <section className="search-preview" aria-labelledby="search-title">
-        <div>
-          <span className="eyebrow">Próxima funcionalidad</span>
-          <h2 id="search-title">Busca tu próximo viaje</h2>
-          <p>La búsqueda de rutas y fechas estará disponible en la ETAPA 5B.</p>
-        </div>
-        <span className="status-pill">Próximamente</span>
-      </section>
+      <SearchForm
+        stops={stops}
+        isLoading={isLoading}
+        loadError={error}
+        initialOrigin={searchParams.get('origin') ?? ''}
+        initialDestination={searchParams.get('destination') ?? ''}
+        initialDate={searchParams.get('date') ?? ''}
+      />
     </div>
   )
 }

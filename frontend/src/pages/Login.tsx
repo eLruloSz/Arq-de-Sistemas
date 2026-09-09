@@ -2,6 +2,35 @@ import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { getApiErrorMessage } from '../api/errors'
 import { useAuth } from '../context/useAuth'
+import { getBookingDraft } from '../utils/bookingStorage'
+
+interface LoginLocationState {
+  registrationSuccess?: boolean
+  from?: unknown
+}
+
+function getProtectedDestination(from: unknown) {
+  if (!from || typeof from !== 'object') return null
+
+  const location = from as { pathname?: unknown; search?: unknown; hash?: unknown }
+  if (typeof location.pathname !== 'string') return null
+
+  const isProtectedDestination =
+    location.pathname === '/checkout' ||
+    location.pathname === '/bookings' ||
+    location.pathname === '/admin' ||
+    /^\/booking-confirmation\/[^/]+$/.test(location.pathname)
+
+  if (!isProtectedDestination) return null
+
+  const search = typeof location.search === 'string' && location.search.startsWith('?')
+    ? location.search
+    : ''
+  const hash = typeof location.hash === 'string' && location.hash.startsWith('#')
+    ? location.hash
+    : ''
+  return `${location.pathname}${search}${hash}`
+}
 
 export function Login() {
   const navigate = useNavigate()
@@ -11,11 +40,12 @@ export function Login() {
   const [password, setPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
-  const registrationSuccess = Boolean(
-    (location.state as { registrationSuccess?: boolean } | null)?.registrationSuccess,
-  )
+  const locationState = location.state as LoginLocationState | null
+  const registrationSuccess = Boolean(locationState?.registrationSuccess)
+  const destination =
+    getProtectedDestination(locationState?.from) ?? (getBookingDraft() ? '/checkout' : '/')
 
-  if (isAuthenticated) return <Navigate to="/" replace />
+  if (isAuthenticated) return <Navigate to={destination} replace />
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -24,8 +54,6 @@ export function Login() {
 
     try {
       await login({ username, password })
-      const destination =
-        (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/'
       navigate(destination, { replace: true })
     } catch (requestError) {
       setError(getApiErrorMessage(requestError, 'No fue posible iniciar sesión. Intenta nuevamente.'))
