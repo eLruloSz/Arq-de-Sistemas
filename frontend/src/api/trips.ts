@@ -1,5 +1,17 @@
 import { apiClient } from './client'
+import { getAllPages } from './pagination'
+import type { AdminTrip, TripInput } from '../types/admin'
 import type { Availability, TripSearchParams, TripSearchResult } from '../types/travel'
+
+export const getTrips = () => getAllPages<AdminTrip>('trips/')
+
+export async function createTrip(input: TripInput) {
+  return (await apiClient.post<AdminTrip>('trips/', input)).data
+}
+
+export async function updateTrip(id: number, input: TripInput) {
+  return (await apiClient.patch<AdminTrip>(`trips/${id}/`, input)).data
+}
 
 export async function searchTrips(params: TripSearchParams) {
   const response = await apiClient.get<TripSearchResult[]>('trips/search/', { params })

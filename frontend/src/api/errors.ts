@@ -31,3 +31,23 @@ export function getApiErrorMessage(error: unknown, fallback: string) {
     fallback
   )
 }
+
+function flattenMessages(value: unknown): string[] {
+  if (typeof value === 'string') return [value]
+  if (Array.isArray(value)) return value.flatMap(flattenMessages)
+  if (value && typeof value === 'object') {
+    return Object.entries(value).flatMap(([field, messages]) =>
+      flattenMessages(messages).map((message) =>
+        field === 'non_field_errors' || field === 'detail' || field === 'message'
+          ? message
+          : `${field}: ${message}`,
+      ),
+    )
+  }
+  return []
+}
+
+export function getDrfErrorMessage(error: unknown, fallback: string) {
+  if (!axios.isAxiosError(error)) return fallback
+  return flattenMessages(error.response?.data).join(' ') || fallback
+}

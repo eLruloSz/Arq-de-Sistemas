@@ -1,7 +1,13 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { Layout } from './components/layout/Layout'
-import { AdminPlaceholder } from './pages/AdminPlaceholder'
+import { AdminBuses } from './pages/admin/AdminBuses'
+import { AdminFares } from './pages/admin/AdminFares'
+import { AdminHome } from './pages/admin/AdminHome'
+import { AdminRoutes } from './pages/admin/AdminRoutes'
+import { AdminSeats } from './pages/admin/AdminSeats'
+import { AdminStops } from './pages/admin/AdminStops'
+import { AdminTrips } from './pages/admin/AdminTrips'
 import { BookingConfirmation } from './pages/BookingConfirmation'
 import { BookingDetail } from './pages/BookingDetail'
 import { Bookings } from './pages/Bookings'
@@ -58,10 +64,16 @@ function App() {
           path="admin"
           element={
             <ProtectedRoute requireAdmin>
-              <AdminPlaceholder />
+              <AdminHome />
             </ProtectedRoute>
           }
         />
+        <Route path="admin/buses" element={<ProtectedRoute requireAdmin><AdminBuses /></ProtectedRoute>} />
+        <Route path="admin/seats" element={<ProtectedRoute requireAdmin><AdminSeats /></ProtectedRoute>} />
+        <Route path="admin/stops" element={<ProtectedRoute requireAdmin><AdminStops /></ProtectedRoute>} />
+        <Route path="admin/routes" element={<ProtectedRoute requireAdmin><AdminRoutes /></ProtectedRoute>} />
+        <Route path="admin/fares" element={<ProtectedRoute requireAdmin><AdminFares /></ProtectedRoute>} />
+        <Route path="admin/trips" element={<ProtectedRoute requireAdmin><AdminTrips /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
