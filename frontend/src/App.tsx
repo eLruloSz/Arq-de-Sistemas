@@ -2,8 +2,9 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { Layout } from './components/layout/Layout'
 import { AdminPlaceholder } from './pages/AdminPlaceholder'
-import { BookingsPlaceholder } from './pages/BookingsPlaceholder'
 import { BookingConfirmation } from './pages/BookingConfirmation'
+import { BookingDetail } from './pages/BookingDetail'
+import { Bookings } from './pages/Bookings'
 import { Checkout } from './pages/Checkout'
 import { Home } from './pages/Home'
 import { Login } from './pages/Login'
@@ -41,7 +42,15 @@ function App() {
           path="bookings"
           element={
             <ProtectedRoute>
-              <BookingsPlaceholder />
+              <Bookings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="bookings/:id"
+          element={
+            <ProtectedRoute>
+              <BookingDetail />
             </ProtectedRoute>
           }
         />

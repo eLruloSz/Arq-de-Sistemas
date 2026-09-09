@@ -30,7 +30,8 @@ const FRIENDLY_MESSAGES: Record<string, string> = {
   FARE_NOT_FOUND: 'No existe una tarifa disponible para el tramo seleccionado.',
   INVALID_SEAT: 'Uno de los asientos seleccionados no corresponde a este bus.',
   INVALID_RESERVATION: 'No fue posible validar la reserva con los datos enviados.',
-  BOOKING_NOT_PAYABLE: 'Esta reserva ya no se encuentra disponible para pago.',
+  BOOKING_NOT_PAYABLE: 'Esta reserva no puede pagarse en su estado actual.',
+  BOOKING_NOT_CANCELLABLE: 'Esta reserva no puede cancelarse en su estado actual.',
 }
 
 export function getFriendlyDomainMessage(error: unknown, fallback: string) {
